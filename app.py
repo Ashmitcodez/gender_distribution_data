@@ -66,8 +66,46 @@ melted_agg = yearly_agg.melt(
     value_name="Count"
 )
 
-# Define consistent color scheme
-color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], range=["#FF6B6B", "#4169E1", "#95B8D1"])
+# Color configuration: palette source + colorblind option + custom picks
+palette_source = st.sidebar.selectbox(
+    "Palette source",
+    ("Default (red/blue/lightblue)", "ColorBrewer (Paired)", "Okabe-Ito (Colorblind-friendly)", "Custom")
+)
+
+# Allow user to force colorblind-friendly palette
+use_colorblind = st.sidebar.checkbox("Use colorblind-friendly palette (Okabe-Ito)", value=False)
+
+# Prioritise explicit colorblind override
+if use_colorblind:
+    # Okabe-Ito palette (colorblind-safe)
+    female_col = "#E69F00"  # orange
+    male_col = "#0072B2"    # blue
+    diverse_col = "#009E73" # green
+    color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], range=[female_col, male_col, diverse_col])
+else:
+    if palette_source == "Default (red/blue/lightblue)":
+        female_col = "#FF6B6B"  # red-ish
+        male_col = "#4169E1"    # royal blue
+        diverse_col = "#95B8D1" # light blue
+        color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], range=[female_col, male_col, diverse_col])
+    elif palette_source == "ColorBrewer (Paired)":
+        # Use Altair/vega scheme name for ColorBrewer 'Paired' and also pick representative hexes
+        # Representative first three colors from 'Paired' (for legend)
+        female_col = "#a6cee3"
+        male_col = "#1f78b4"
+        diverse_col = "#b2df8a"
+        color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], scheme="paired")
+    elif palette_source == "Okabe-Ito (Colorblind-friendly)":
+        female_col = "#E69F00"  # orange
+        male_col = "#0072B2"    # blue
+        diverse_col = "#009E73" # green
+        color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], range=[female_col, male_col, diverse_col])
+    else:
+        # Custom palette: allow users to pick colors
+        female_col = st.sidebar.color_picker("Female color", "#FF6B6B")
+        male_col = st.sidebar.color_picker("Male color", "#4169E1")
+        diverse_col = st.sidebar.color_picker("Diverse color", "#95B8D1")
+        color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], range=[female_col, male_col, diverse_col])
 
 if len(years) == 1:
     st.markdown("### Gender distribution (Selected year)")
@@ -96,6 +134,30 @@ else:
     ).properties(height=400, width=600)
     
     st.altair_chart(stacked_chart, use_container_width=True)
+
+# Ensure legend color variables exist (fallbacks) so the HTML legend can render
+if "female_col" not in locals():
+    female_col = "#FF6B6B"
+if "male_col" not in locals():
+    male_col = "#4169E1"
+if "diverse_col" not in locals():
+    diverse_col = "#95B8D1"
+
+# Small legend to explain current palette
+st.markdown("### Current colour mapping")
+legend_html = f"""
+<div style='display:flex;gap:12px;align-items:center'>
+    <div style='display:flex;flex-direction:column;gap:4px'>
+        <div><span style='display:inline-block;width:14px;height:14px;background:{female_col};border-radius:3px;margin-right:8px'></span>Female</div>
+        <div><span style='display:inline-block;width:14px;height:14px;background:{male_col};border-radius:3px;margin-right:8px'></span>Male</div>
+        <div><span style='display:inline-block;width:14px;height:14px;background:{diverse_col};border-radius:3px;margin-right:8px'></span>Diverse</div>
+    </div>
+    <div style='padding-left:12px;color:#555'>
+        <small>Choose a palette or pick custom colours in the sidebar. Check "Use colorblind-friendly palette" to force a colorblind-safe set.</small>
+    </div>
+</div>
+"""
+st.markdown(legend_html, unsafe_allow_html=True)
 
 st.markdown("### Stacked bar chart by specialisation (All years combined)")
 
