@@ -57,8 +57,6 @@ col2.metric("Female share", f"{total_female / total_headcount:.1%}")
 col3.metric("Male share", f"{total_male / total_headcount:.1%}")
 col4.metric("Diverse count", int(total_diverse))
 
-st.markdown("### Stacked bar chart (All selected years)")
-
 # Aggregate data for all selected years
 yearly_agg = filtered.groupby("Year", as_index=False)[["Female", "Male", "Diverse"]].sum()
 melted_agg = yearly_agg.melt(
@@ -68,14 +66,33 @@ melted_agg = yearly_agg.melt(
     value_name="Count"
 )
 
-stacked_chart = alt.Chart(melted_agg).mark_bar().encode(
-    x=alt.X("Year:O", title="Year"),
-    y=alt.Y("Count:Q", title="Headcount"),
-    color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
-    tooltip=["Year", "Gender", "Count"]
-).properties(height=400, width=600)
-
-st.altair_chart(stacked_chart, use_container_width=True)
+if len(years) == 1:
+    st.markdown("### Gender distribution (Selected year)")
+    
+    # Create pie chart for single year
+    pie_data = pd.DataFrame({
+        "Gender": ["Female", "Male", "Diverse"],
+        "Count": [total_female, total_male, total_diverse]
+    })
+    
+    pie_chart = alt.Chart(pie_data).mark_arc().encode(
+        theta="Count:Q",
+        color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+        tooltip=["Gender", "Count"]
+    ).properties(height=400)
+    
+    st.altair_chart(pie_chart, use_container_width=True)
+else:
+    st.markdown("### Stacked bar chart (All selected years)")
+    
+    stacked_chart = alt.Chart(melted_agg).mark_bar().encode(
+        x=alt.X("Year:O", title="Year"),
+        y=alt.Y("Count:Q", title="Headcount"),
+        color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+        tooltip=["Year", "Gender", "Count"]
+    ).properties(height=400, width=600)
+    
+    st.altair_chart(stacked_chart, use_container_width=True)
 
 st.markdown("### Stacked bar chart by specialisation (All years combined)")
 
