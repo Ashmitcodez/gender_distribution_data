@@ -66,6 +66,9 @@ melted_agg = yearly_agg.melt(
     value_name="Count"
 )
 
+# Define consistent color scheme
+color_scale = alt.Scale(domain=["Female", "Male", "Diverse"], range=["#FF6B6B", "#4169E1", "#95B8D1"])
+
 if len(years) == 1:
     st.markdown("### Gender distribution (Selected year)")
     
@@ -77,7 +80,7 @@ if len(years) == 1:
     
     pie_chart = alt.Chart(pie_data).mark_arc().encode(
         theta="Count:Q",
-        color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+        color=alt.Color("Gender:N", scale=color_scale),
         tooltip=["Gender", "Count"]
     ).properties(height=400)
     
@@ -88,7 +91,7 @@ else:
     stacked_chart = alt.Chart(melted_agg).mark_bar().encode(
         x=alt.X("Year:O", title="Year"),
         y=alt.Y("Count:Q", title="Headcount"),
-        color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+        color=alt.Color("Gender:N", scale=color_scale),
         tooltip=["Year", "Gender", "Count"]
     ).properties(height=400, width=600)
     
@@ -108,7 +111,7 @@ melted_spec = spec_agg.melt(
 spec_stacked_chart = alt.Chart(melted_spec).mark_bar().encode(
     x=alt.X("Specialisation:N", title="Specialisation", sort="-y"),
     y=alt.Y("Count:Q", title="Headcount"),
-    color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+    color=alt.Color("Gender:N", scale=color_scale),
     tooltip=["Specialisation", "Gender", "Count"]
 ).properties(height=400)
 
@@ -134,7 +137,7 @@ melted_pct["Gender"] = melted_pct["Gender"].str.replace("_pct", "")
 pct_stacked_chart = alt.Chart(melted_pct).mark_bar().encode(
     x=alt.X("Specialisation:N", title="Specialisation", sort="-y"),
     y=alt.Y("Percentage:Q", title="Percentage", stack="normalize", axis=alt.Axis(format="%")),
-    color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+    color=alt.Color("Gender:N", scale=color_scale),
     tooltip=["Specialisation", "Gender", alt.Tooltip("Percentage:Q", format=".1%")]
 ).properties(height=400)
 
@@ -160,7 +163,7 @@ if view_mode == "By specialisation":
     chart = alt.Chart(melted).mark_bar().encode(
         x=alt.X("Specialisation:N", sort="-y", title="Specialisation"),
         y=alt.Y("sum(Count):Q", title="Headcount"),
-        color=alt.Color("Gender:N"),
+        color=alt.Color("Gender:N", scale=color_scale),
         column=alt.Column("Year:O", title="Year"),
         tooltip=["Year", "Specialisation", "Gender", "Count"]
     ).properties(width=180)
@@ -180,7 +183,7 @@ else:
     chart = alt.Chart(melted).mark_bar().encode(
         x=alt.X("Year:O"),
         y=alt.Y("Count:Q", stack="normalize", title="Share of headcount"),
-        color="Gender:N",
+        color=alt.Color("Gender:N", scale=color_scale),
         tooltip=["Year", "Gender", "Count"]
     ).properties(height=400)
 
