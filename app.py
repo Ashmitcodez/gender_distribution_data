@@ -57,6 +57,72 @@ col2.metric("Female share", f"{total_female / total_headcount:.1%}")
 col3.metric("Male share", f"{total_male / total_headcount:.1%}")
 col4.metric("Diverse count", int(total_diverse))
 
+st.markdown("### Stacked bar chart (All selected years)")
+
+# Aggregate data for all selected years
+yearly_agg = filtered.groupby("Year", as_index=False)[["Female", "Male", "Diverse"]].sum()
+melted_agg = yearly_agg.melt(
+    id_vars=["Year"],
+    value_vars=["Female", "Male", "Diverse"],
+    var_name="Gender",
+    value_name="Count"
+)
+
+stacked_chart = alt.Chart(melted_agg).mark_bar().encode(
+    x=alt.X("Year:O", title="Year"),
+    y=alt.Y("Count:Q", title="Headcount"),
+    color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+    tooltip=["Year", "Gender", "Count"]
+).properties(height=400, width=600)
+
+st.altair_chart(stacked_chart, use_container_width=True)
+
+st.markdown("### Stacked bar chart by specialisation (All years combined)")
+
+# Aggregate data across all selected years by specialisation
+spec_agg = filtered.groupby("Specialisation", as_index=False)[["Female", "Male", "Diverse"]].sum()
+melted_spec = spec_agg.melt(
+    id_vars=["Specialisation"],
+    value_vars=["Female", "Male", "Diverse"],
+    var_name="Gender",
+    value_name="Count"
+)
+
+spec_stacked_chart = alt.Chart(melted_spec).mark_bar().encode(
+    x=alt.X("Specialisation:N", title="Specialisation", sort="-y"),
+    y=alt.Y("Count:Q", title="Headcount"),
+    color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+    tooltip=["Specialisation", "Gender", "Count"]
+).properties(height=400)
+
+st.altair_chart(spec_stacked_chart, use_container_width=True)
+
+st.markdown("### Gender distribution by specialisation (All years combined)")
+
+# Calculate percentages for each specialisation
+spec_pct = spec_agg.copy()
+spec_pct["Total"] = spec_pct["Female"] + spec_pct["Male"] + spec_pct["Diverse"]
+spec_pct["Female_pct"] = spec_pct["Female"] / spec_pct["Total"]
+spec_pct["Male_pct"] = spec_pct["Male"] / spec_pct["Total"]
+spec_pct["Diverse_pct"] = spec_pct["Diverse"] / spec_pct["Total"]
+
+melted_pct = spec_pct.melt(
+    id_vars=["Specialisation"],
+    value_vars=["Female_pct", "Male_pct", "Diverse_pct"],
+    var_name="Gender",
+    value_name="Percentage"
+)
+melted_pct["Gender"] = melted_pct["Gender"].str.replace("_pct", "")
+
+pct_stacked_chart = alt.Chart(melted_pct).mark_bar().encode(
+    x=alt.X("Specialisation:N", title="Specialisation", sort="-y"),
+    y=alt.Y("Percentage:Q", title="Percentage", stack="normalize", axis=alt.Axis(format="%")),
+    color=alt.Color("Gender:N", scale=alt.Scale(scheme="category10")),
+    tooltip=["Specialisation", "Gender", alt.Tooltip("Percentage:Q", format=".1%")]
+).properties(height=400)
+
+st.altair_chart(pct_stacked_chart, use_container_width=True)
+
 st.markdown("### Stacked gender counts")
 
 if view_mode == "By specialisation":
